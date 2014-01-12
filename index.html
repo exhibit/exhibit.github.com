@@ -1,1 +1,203 @@
-hello world
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Demo</title>
+<style>
+*{margin: 0;padding: 0;}
+</style>
+</head>
+<body>
+<pre class="brush: js;">
+var Apps=Apps||{};
+Apps.namespace=function(name){/*命名空间*/};
+Apps.namespace("Class");
+Apps.namespace("Inst");
+
+Apps.Class.gallery=(function(win,D,undefined){
+	var plugin=function (name){
+		this.lay=D.getElementById(ele).children[0];
+		this.width = this.lay.getBoundingClientRect().width || this.lay.offsetWidth;
+		this.options = options || {};
+		this.callback = this.options.callback || false;
+		this.Added=false;
+		this.setup();
+	};
+	plugin.prototype={
+		constructor:Apps.Class.gallery,
+		version:'1.0',
+		setup:function(){
+			this.pages=this.lay.children;
+			if(this.pages<1){return}
+			this.NUM=this.pages.length;
+			this.index=0;
+			this.from=undefined;
+			if (!this.Added && this.lay.addEventListener) {
+				this.lay.addEventListener('touchstart', this, false);
+				this.lay.addEventListener('touchmove', this, false);
+				this.lay.addEventListener('touchend', this, false);
+				this.lay.addEventListener('touchcancel', this, false);
+				win.addEventListener("onorientationchange" in win ? "orientationchange" : "resize",this, false);
+				this.Added=true;
+			}
+			if(this.callback){
+				this.lay.addEventListener('webkitTransitionEnd',this, false);
+				this.doSomething(this);
+			}
+			this.slide(this.index,0);
+		},
+		handleEvent: function(e) {
+			switch (e.type) {
+			  case 'touchstart': this.onStart(e); break;
+			  case 'touchmove': this.onMov(e); break;
+			  case 'touchcancel' :
+			  case 'touchend': this.onEnd(e); break;
+			  case 'webkitTransitionEnd': this.doSomething(this); break;
+			  case 'orientationChange' : 
+			  case 'resize':this.reset(e);break;
+			}
+		},
+		slide:function(idx,duration){
+			var style = this.lay.style;
+			this.from=this.index;
+			this.index = idx;
+			style.webkitTransitionDuration = duration + 'ms';
+			style.webkitTransform ='translateX('+ -(idx * this.width) + 'px)';
+			if(this.pages[idx]&&this.pages[idx].className==''){
+				this.pages[idx].className="ready";
+			}
+		},
+		onStart:function(e){
+			this.pageX=e.touches[0].pageX;
+			this.pageY=e.touches[0].pageY;
+			this.time=+new Date;
+			this.deltaX = 0;
+			this.lay.style.webkitTransitionDuration = 0;
+			e.stopPropagation();
+		},
+		onMov:function(e){
+			e.preventDefault();
+			this.deltaX = e.touches[0].pageX - this.pageX;	
+			this.lay.style.webkitTransform = 'translate3d(' + (this.deltaX - this.index * this.width) + 'px,0,0)';
+			e.stopPropagation();
+		},
+		onEnd:function(e){
+			var isValidSlide = +new Date - this.time <250 && Math.abs(this.deltaX) > 20 || Math.abs(this.deltaX) > this.width/2,
+				isPastBounds = !this.index && this.deltaX > 0 || this.index == this.NUM - 1 && this.deltaX < 0; 
+			this.slide( this.index + ( isValidSlide && !isPastBounds ? (this.deltaX < 0 ? 1 : -1) : 0 ),300);
+			 e.stopPropagation();
+		},
+		doSomething:function(e){
+			if((e.from==undefined) || (e.from!=e.index)){
+				e.callback.apply(e,[e,e.index,e.from]);
+			}
+		},
+		reset:function(){
+			this.width = this.lay.getBoundingClientRect().width || this.lay.offsetWidth;
+			this.slide(this.index,0);
+		},
+		extend:function(obj,target){
+			target = target||this;for(var prop in obj){target[prop] = obj[prop]}
+		}
+	}
+	return plugin;
+})(window,document);
+
+
+Apps.Inst.gallery=new Apps.Class.gallery('xx');
+Apps.Inst.gallery.extend({
+	$$:function(a,b){
+		var c = (a && typeof a != "string") ? a: document.getElementById(a);
+		return (!b ? c: c.getElementsByTagName(b));
+	},
+	init:function(D){
+		this.eles={};
+		this.eles['CORE']=D.getElementById("gallery");
+		this.eles['p']=D.getElementById("gmore");
+		this.eles['title']=D.getElementById("ghd");
+		this.eles['info']=D.getElementById("ginfo");
+		this.eles['bar']=this.$$("bar","i")[0];
+		this.events(this.eles);
+		return this;
+	},
+	events:function(e){
+		var that=this;
+		e['CORE'].addEventListener("touchstart",function(ev){
+			switch(ev.target.id){
+				case 'ghd':
+				case 'menu':
+				case 'gmore':e.p.className=e.p.className=='show'?'':'show';break;
+				case 'pre':that.nav(-1);break;
+				case 'next':that.nav(1);break;
+			}
+		},false)
+	},
+	nav:function(e){
+		if(this.index+e<0 || this.index+e >=this.NUM){return}
+		this.slide(this.index+e,300);
+	},
+	load:function(uid){
+		var that=this,str='',len;
+		if(!uid){return};
+		that.lay.className="ready";
+		$.ajax({
+		  type: 'GET',
+		  url: 'index.php',
+		  data: {m:'dbsource',c:'call',a:'get',id:uid},
+		  dataType: 'json',
+		  //timeout: 300,
+		  success: function(txt){
+			that.lay.className="";
+			len=txt.length;
+			that.DATA=txt;
+			/*使用模板引擎拼装json*/
+			that.setup();
+		  },
+		  error: function(xhr,type){
+			that.lay.innerHTML="栏目繁忙，请选择其他图集"
+		  }
+		})
+	},
+	callback:function(e,idx,from){
+		var pages=e.pages[idx||0];
+		var data=e.DATA[idx||0];
+		e.eles.title.innerHTML=data['title'];
+		e.eles.info.innerHTML=(idx+1)+"/"+e.NUM;
+		e.eles.p.innerHTML=data['description']+data['intime'];
+		e.eles.bar.style.width = (idx+1)/e.NUM*100 + "%";
+		if(pages.className!='done'){
+			e.preload(data['thumb'],function(img){
+					pages.innerHTML="插入图片";
+					pages.className="done";
+			})
+		}
+	},
+	menu:function(){
+		var t=this;var cate=t.$$('cate'),panel=t.$$('panel'),lis=t.$$(panel,'li'),len=lis.length,from=lis[0];
+		from.className='on';
+		cate.addEventListener("touchstart",function(ev){
+			var node=ev.target;
+			panel.style.display=panel.style.display=="block"?'none':"block";
+			t.eles.p.className='show';
+			if(node.nodeName.toLowerCase()=='li'){
+				if(node==from){return}
+				from.className="";node.className="on";from=node;
+				this.load(node.getAttribute("data-uid"));
+			}
+		},false);
+	},
+	preload:function(url,callback){
+		var img =new Image();    
+		img.onload =function(){callback(img);img.onload=img.onerror=null;}
+		img.onerror=function(){img.src='http://www.baidu.com/img/baidu_logo.gif';img.onerror=null}
+		img.src = url;
+	}
+});
+
+//Apps.Inst.gallery.init(document).load(9);默认加载
+//Apps.Inst.gallery.menu();
+
+//不使用seajs或requireJs的情况下，自己会这么写 
+</pre>
+</body>
+</html>
