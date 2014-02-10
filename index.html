@@ -47,7 +47,7 @@ Apps.add('Class.gallery',function(){
 	}
 	gallery.prototype={
 		setup:function(){
-			this.pages=this.lay.children;//li
+			this.pages=this.lay.children;
 			if(this.pages<1){return}
 			this.NUM=this.pages.length;
 			this.index=0;
@@ -181,7 +181,7 @@ gallery.extend({//特性扩展
 			that.setup();
 		  },
 		  error: function(xhr,type){
-			that.lay.innerHTML="<p class='error'>栏目繁忙，请选择其他图集</p>"
+			that.lay.innerHTML="栏目繁忙，请选择其他图集"
 		  }
 		})
 	},
@@ -195,7 +195,7 @@ gallery.extend({//特性扩展
 		e.eles.bar.style.width = (idx+1)/e.NUM*100 + "%";
 		if(pages.className!='done'){
 			e.preload(data['thumb'],function(img){
-					pages.innerHTML="<img src='"+img.src+"' />";
+					pages.innerHTML="img src='"+img.src+"'";
 					pages.className="done";
 			})
 		}
