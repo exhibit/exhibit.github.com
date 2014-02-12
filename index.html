@@ -222,7 +222,7 @@ gallery.init(document).load(9);
 gallery.menu();
 
 
-/* 其他zepto插件 */
+/* 其他插件 */
 ;(function($,win,undefined){
         'use strict';
         var pName="Orz",
@@ -250,14 +250,17 @@ gallery.menu();
 							e.isMoving=false;
 					});
 				}
-			}
+			},
+			'fade'  : function(e){},
+			'flip'  : function(e){},
+			'swipe' : function(e){}
 		}
         $.fn[pName]=function(options,value){
                 if(typeof options === 'object' || !arguments.length){
-                        var opts= $.extend({},defaults,options);//$.extend(defaults,options); 会冲突
+                        var opts= $.extend({},defaults,options);//$.extend(defaults,options);
                         return this.each(function(){
                                 if (!$.data(this,'plugin-' + pName)){
-									$.data(this,'plugin-' + pName,new Plugin($(this),opts));
+					$.data(this,'plugin-' + pName,new Plugin($(this),opts));
                                 }
                         });
                 }else if(typeof options === 'string' && options != 'init'){
@@ -273,13 +276,13 @@ gallery.menu();
 
         function Plugin($this,opts){
                 this.$e = $this;
-				this.idx=0;
-				this.from=0;
-				this.opts=opts;
-				this.$lis=$this.find(opts.content);
-				this.isMoving=false;
-				this.len=this.$lis.length;
-				this.effect = EFFECT[opts.effect]||function(){};
+		this.idx=0;
+		this.from=0;
+		this.opts=opts;
+		this.$lis=$this.find(opts.content);
+		this.isMoving=false;
+		this.len=this.$lis.length;
+		this.effect = EFFECT[opts.effect]||function(){};
                 this.init(opts);
         };
         Plugin.prototype={
@@ -289,7 +292,7 @@ gallery.menu();
                 },
                 readyCss:function(opts){
 					var $lis=this.$lis.eq(0);
-					var wh=opts.vertical?$lis.outerHeight(true):$lis.outerWidth(true);//算上margin
+					var wh=opts.vertical?$lis.outerHeight(true):$lis.outerWidth(true);
 					var WH=opts.vertical?this.$e.height():this.$e.width();
 					var gap=opts.vertical?parseInt($lis.css('marginBottom')):parseInt($lis.css('marginRight'));
 					if(gap>0){WH=WH+gap}//算上margin
@@ -319,7 +322,7 @@ gallery.menu();
 					var that=this;
 					if(opts.button && this.len>1){
 						var $ol=$("<ol></ol>").appendTo(this.$e),str='';
-						for(var i=0;i<this.len;i++){str+="<li>"+(i+1)+"</li>";}//设置了set.all后this.len会有不同个数
+						for(var i=0;i<this.len;i++){str+="<li>"+(i+1)+"</li>";}
 						$ol[0].innerHTML=str;
 						this.olis=$ol[0].getElementsByTagName('li');
 						this.olis[0].className="on";
@@ -354,7 +357,7 @@ gallery.menu();
 				},
 				nav:function(){
 					if(!this.isMoving){
-						if( (!this.opts.loop && !this.opts.all) && (this.idx>(this.num-this.viewed))){// 没有all的时候不能用this.len
+						if( (!this.opts.loop && !this.opts.all) && (this.idx>(this.num-this.viewed))){
 							this.idx=0;
 						}
 						if(this.idx<0 || this.idx>=this.len){
