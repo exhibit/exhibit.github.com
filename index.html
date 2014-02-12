@@ -121,6 +121,7 @@ Apps.add('Class.gallery',function(){
 			for(var prop in obj){target[prop] = obj[prop]}
 		}
 	}
+	return gallery
 })
 
 
@@ -220,6 +221,157 @@ gallery.extend({//特性扩展
 gallery.init(document).load(9);
 gallery.menu();
 
-<pre>
+
+/* 其他zepto插件 */
+;(function($,win,undefined){
+        'use strict';
+        var pName="Orz",
+        defaults = {
+			content:"ul>li",
+			effect:"scroll",
+			button:true,
+			loop:false,
+			vertical:false,
+			all:true,
+			nav:false
+		};
+		var EFFECT={
+			'scroll':function(e){
+				e.isMoving=true;
+				if(e.opts.loop && e.from==e.len-1 && e.idx==0){
+					e.css[e.fly]+=this.WH;
+					e.lay.animate(e.css,function(){
+							e.lay[0][e.fly]=0;
+							e.isMoving=false;
+					})
+				}else{
+					e.css[e.fly]=(e.idx*this.WH);
+					e.lay.animate(e.css,'slow',function(){
+							e.isMoving=false;
+					});
+				}
+			}
+		}
+        $.fn[pName]=function(options,value){
+                if(typeof options === 'object' || !arguments.length){
+                        var opts= $.extend({},defaults,options);//$.extend(defaults,options); 会冲突
+                        return this.each(function(){
+                                if (!$.data(this,'plugin-' + pName)){
+									$.data(this,'plugin-' + pName,new Plugin($(this),opts));
+                                }
+                        });
+                }else if(typeof options === 'string' && options != 'init'){
+                        return this.each(function(){
+                                var data=$.data(this,'plugin-' + pName);
+                                if(data && data[options]){
+                                        value && (data.opts[options]=value);
+                                        return data[options]();
+                                }
+                        });
+                }
+        };
+
+        function Plugin($this,opts){
+                this.$e = $this;
+				this.idx=0;
+				this.from=0;
+				this.opts=opts;
+				this.$lis=$this.find(opts.content);
+				this.isMoving=false;
+				this.len=this.$lis.length;
+				this.effect = EFFECT[opts.effect]||function(){};
+                this.init(opts);
+        };
+        Plugin.prototype={
+                init:function(opts){
+					this.readyCss(opts);
+					this.generate(opts)
+                },
+                readyCss:function(opts){
+					var $lis=this.$lis.eq(0);
+					var wh=opts.vertical?$lis.outerHeight(true):$lis.outerWidth(true);//算上margin
+					var WH=opts.vertical?this.$e.height():this.$e.width();
+					var gap=opts.vertical?parseInt($lis.css('marginBottom')):parseInt($lis.css('marginRight'));
+					if(gap>0){WH=WH+gap}//算上margin
+					this.viewed=Math.ceil(WH/wh);
+					this.num=this.len;
+					switch(opts.effect){
+						case "scroll":
+							var l,tmp;
+							this.css={};
+							if(opts.all){this.WH=WH;this.len=Math.ceil(wh*this.num/(this.WH+gap))}else{this.WH=wh}
+							this.fly=opts.vertical?'scrollTop':'scrollLeft';
+							this.$ul=this.$e.children(opts.content.substring(0,opts.content.indexOf('>')));
+							if(opts.loop){
+								tmp=document.createDocumentFragment();
+								for(var i=0;i<this.viewed;i++){this.$lis.eq(i).clone().appendTo(tmp);}
+								this.$ul.append(tmp);
+							};
+							l=(opts.loop&&!opts.vertical)?this.WH*this.len+(this.viewed*wh):this.WH*this.len;
+							if(opts.vertical){l=false}
+							this.$ul.css({width:l||'100%',height:'100%'}).wrap("<div style='overflow:hidden;height:100%;width:100%'></div>").children().css({overflow:'hidden',float:opts.vertical?'':'left'});
+							this.lay=this.$ul.parent();
+							break;
+						default:break;
+					}
+                },
+				generate:function(opts){
+					var that=this;
+					if(opts.button && this.len>1){
+						var $ol=$("<ol></ol>").appendTo(this.$e),str='';
+						for(var i=0;i<this.len;i++){str+="<li>"+(i+1)+"</li>";}//设置了set.all后this.len会有不同个数
+						$ol[0].innerHTML=str;
+						this.olis=$ol[0].getElementsByTagName('li');
+						this.olis[0].className="on";
+						this.$e.on("mouseover","ol li", function(){
+							that.start($(this).index());
+						})
+					}
+					if(opts.nav && this.len>1){
+						$("<a href='javascript:void(0)' onselectstart='return false;' class='pre'><</a><a href='javascript:void(0)' onselectstart='return false' class='next'>></a>").appendTo(this.$e);
+						this.$e.on("click",".pre",function(){
+							that.nav(that.idx--);
+							
+						}).on("click",".next",function(){
+							that.nav(that.idx++);
+							
+						})
+					}
+				},
+				start:function(now){
+					this.idx=now;
+					if(this.idx!=this.from && !this.isMoving){		
+						this.effect(this);
+						this.reset();
+					}
+				},
+				reset:function(){
+					if(this.opts.button){
+						this.olis[this.from].className="";
+						this.olis[this.idx].className="on";
+					}
+					this.from=this.idx;
+				},
+				nav:function(){
+					if(!this.isMoving){
+						if( (!this.opts.loop && !this.opts.all) && (this.idx>(this.num-this.viewed))){// 没有all的时候不能用this.len
+							this.idx=0;
+						}
+						if(this.idx<0 || this.idx>=this.len){
+							this.idx=0;
+						}
+						this.start(this.idx);
+					}
+				}
+        }
+
+})(jQuery,window);
+
+$('#ppt').Orz({nav:true,loop:true})
+$('#ppt2').Orz({nav:true,button:false,all:false,loop:true})
+$('#ppt3').Orz({vertical:true,nav:true,all:false,button:false})
+$('#ppt4').Orz({vertical:true,nav:true})
+
+</pre>
 </body>
 </html>
